@@ -6,10 +6,6 @@ function getSheetID(){
     return urlParams.get('sid');
 }
 
-var sid = getSheetID();
-
-var gsheet_link = 'https://spreadsheets.google.com/feeds/list/'+ sid + '/1/public/values?alt=json';
-
 function get(url){
 	return new Promise(function(resolve, reject){
         let req = new XMLHttpRequest();
@@ -26,23 +22,6 @@ function get(url){
         };
         req.send();
 	});
-}
-
-function googlesheetJsonExtract(gsheetdata, columnNames){
-	let entryData = gsheetdata.feed.entry;
-	let finalJSON = [];
-	for (i=0; i<entryData.length; i++){	
-        let rawdata = entryData[i];
-		let individualDataStr = "{";
-		for (j=0; j<columnNames.length; j++){
-			let jsonKey = "gsx$" + columnNames[j];
-			individualDataStr = individualDataStr + '"' + columnNames[j] + '":' + '"' + rawdata[jsonKey]["$t"] +'",';
-		}
-		individualDataStr = individualDataStr.slice(0,-1);
-        individualDataStr = individualDataStr + "}";
-		finalJSON.push(JSON.parse(individualDataStr.replace(new RegExp('\n','g'),'\\n')));
-	}
-	return finalJSON;
 }
 
 var map = new mapboxgl.Map({
@@ -68,9 +47,8 @@ function addMarker(data) {
         .addTo(map);
 }
 
-get(gsheet_link).then(function(response){
-    let sheet_data = googlesheetJsonExtract(response,["id","lng","lat","css_background","title","description"]);
-    sheet_data.forEach(function(data){
+get(`https://opensheet.vercel.app/${getSheetID()}/data`).then(function(response){
+    response.forEach(function(data){
         if(data.lng!='' && data.lat!=''){
             addMarker(data);
         }
